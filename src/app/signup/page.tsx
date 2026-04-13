@@ -12,11 +12,11 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (form.password \!== form.confirm) { toast.error('Passwords do not match'); return }
+    if (form.password !== form.confirm) { toast.error('Passwords do not match'); return }
     if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return }
     setLoading(true)
     await new Promise(r => setTimeout(r, 800))
-    toast.success('Account created successfully\! Welcome to Zaid Tours')
+    toast.success('Account created successfully! Welcome to Zaid Tours')
     setTimeout(() => router.push('/dashboard'), 1000)
     setLoading(false)
   }
@@ -37,7 +37,7 @@ export default function SignupPage() {
             <div className="grid grid-cols-2 gap-2 mb-2">
               {['individual', 'company'].map(t => (
                 <button key={t} type="button" onClick={() => setForm(p => ({ ...p, type: t }))}
-                  className={`py-2.5 rounded-xl text-sm font-medium border-2 transition capitalize ${form.type === t ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                  className={\}>
                   {t === 'individual' ? 'Individual' : 'Company'}
                 </button>
               ))}
@@ -45,7 +45,7 @@ export default function SignupPage() {
             {([['name', 'Full Name', 'text', 'John Doe'], ['email', 'Email', 'email', 'your@email.com'], ['phone', 'Phone', 'tel', '+962 79 000 0000'], ['password', 'Password', 'password', ''], ['confirm', 'Confirm Password', 'password', '']] as [string, string, string, string][]).map(([k, label, type, ph]) => (
               <div key={k}>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-                <input type={type} required={k \!== 'phone'} value={form[k as keyof typeof form]} onChange={set(k)}
+                <input type={type} required={k !== 'phone'} value={form[k as keyof typeof form]} onChange={set(k)}
                   placeholder={ph}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition" />
               </div>
@@ -57,8 +57,8 @@ export default function SignupPage() {
             </button>
           </form>
           <div className="mt-6 text-center text-sm text-gray-500">
-            Already have an account?{' '}
-            <Link href="/login" className="text-blue-600 font-medium hover:underline">Login</Link>
+            Already have an account?
+            <Link href="/login" className="text-blue-600 font-medium hover:underline ml-1">Login</Link>
           </div>
         </div>
       </div>
