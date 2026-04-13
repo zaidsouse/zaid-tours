@@ -37,7 +37,10 @@ export default function SignupPage() {
             <div className="grid grid-cols-2 gap-2 mb-2">
               {['individual', 'company'].map(t => (
                 <button key={t} type="button" onClick={() => setForm(p => ({ ...p, type: t }))}
-                  className={\}>
+                  className={[
+                    'py-2.5 rounded-xl text-sm font-medium border-2 transition capitalize',
+                    form.type === t ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  ].join(' ')}>
                   {t === 'individual' ? 'Individual' : 'Company'}
                 </button>
               ))}
