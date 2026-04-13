@@ -46,18 +46,18 @@ export default function AdminPage() {
   }
 
   const deleteRequest = (id: string) => {
-    setRequests(prev => prev.filter(r => r.id \!== id))
+    setRequests(prev => prev.filter(r => r.id != id))
     setDeleteConfirm(null)
     toast.success('Request deleted')
   }
 
   const toggleServiceVisibility = (id: string) => {
-    setServices(prev => prev.map(s => s.id === id ? { ...s, is_visible: \!s.is_visible } : s))
+    setServices(prev => prev.map(s => s.id === id ? { ...s, is_visible: !s.is_visible } : s))
     toast.success('Visibility updated')
   }
 
   const addService = () => {
-    if (\!newService.name_en || \!newService.price) { toast.error('Please fill required fields'); return }
+    if (!newService.name_en || !newService.price) { toast.error('Please fill required fields'); return }
     const svc: Service = {
       id: `svc-${Date.now()}`, name_en: newService.name_en, name_ar: newService.name_ar,
       category_id: newService.category_id, price: Number(newService.price),

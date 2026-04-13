@@ -17,10 +17,10 @@ export default function LoginPage() {
     setLoading(true)
     await new Promise(r => setTimeout(r, 800))
     if (email === 'zaidsous@outlook.com' && password === 'Zaid123@') {
-      toast.success('Login successful\!')
+      toast.success('Login successful!')
       setTimeout(() => router.push('/admin'), 500)
     } else if (email === 'zaid@outlook.com' && password === '123') {
-      toast.success('Login successful\!')
+      toast.success('Login successful!')
       setTimeout(() => router.push('/dashboard'), 500)
     } else {
       toast.error('Invalid email or password')
@@ -54,7 +54,7 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition pr-11"
                   placeholder="••••••••"
                 />
-                <button type="button" onClick={() => setShowPass(\!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>

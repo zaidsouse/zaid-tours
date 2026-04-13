@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL\!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -136,7 +136,7 @@ export const companiesService = {
 export const analyticsService = {
   async getSummary() {
     const { data: reqs } = await supabase.from('requests').select('price, payment_status, service_status, service_id, services(name_en)')
-    if (\!reqs) return null
+    if (!reqs) return null
     const totalRevenue = reqs.reduce((s, r) => s + r.price, 0)
     const paidRevenue = reqs.filter(r => r.payment_status === 'paid').reduce((s, r) => s + r.price, 0)
     const pendingRevenue = reqs.filter(r => r.payment_status === 'pending').reduce((s, r) => s + r.price, 0)

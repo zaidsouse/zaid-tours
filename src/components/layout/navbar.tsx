@@ -16,7 +16,7 @@ export default function Navbar({ userRole = 'guest', userName = '' }: NavbarProp
 
   const isActive = (path: string) => pathname === path;
 
-  const toggleMenu = () => setIsOpen(\!isOpen);
+  const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">

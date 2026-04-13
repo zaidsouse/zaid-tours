@@ -16,7 +16,7 @@ const svcBadge: Record<ServiceStatus, string> = { completed: 'bg-green-100 text-
 export default function DashboardPage() {
   const router = useRouter()
   const [user] = useState(mockUser)
-  const activeReqs = requests.filter(r => r.service_status \!== 'completed' && r.service_status \!== 'cancelled')
+  const activeReqs = requests.filter(r => r.service_status != 'completed' && r.service_status != 'cancelled')
   const completedReqs = requests.filter(r => r.service_status === 'completed')
   const totalSpent = requests.reduce((s, r) => s + r.price, 0)
 
@@ -71,7 +71,7 @@ export default function DashboardPage() {
           <p className="text-gray-500 text-sm mb-6">Choose a service to get started</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.map(cat => (
-              <button key={cat.id} onClick={() => toast.info(`${cat.name_en} — Coming soon\!`)}
+              <button key={cat.id} onClick={() => toast.info(`${cat.name_en} — Coming soon!`)}
                 className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-transparent hover:border-blue-200 hover:shadow-md transition cursor-pointer ${categoryColors[cat.id as keyof typeof categoryColors] || 'bg-gray-50 text-gray-600'}`}>
                 <div className="text-2xl">{cat.icon}</div>
                 <span className="text-sm font-medium text-center">{cat.name_en}</span>
