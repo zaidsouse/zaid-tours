@@ -61,6 +61,11 @@ export interface Request {
   payment_status: PaymentStatus
   service_status: ServiceStatus
   notes?: string
+  uploaded_files?: string[]
+  return_reason?: string
+  visa_nationality?: string
+  visa_destination?: string
+  visa_type?: string
   created_at: string
   updated_at: string
 }
