@@ -20,14 +20,14 @@ export const services: Service[] = [
   { id: 'svc-11', name_en: 'Work Visa', name_ar: 'تأشيرة عمل', category_id: 'cat-2', price: 1500, description: 'Work permit and visa processing for professionals', requirements: ['Passport copy', 'Employment contract', 'Bank statement'], is_visible: true },
   { id: 'svc-12', name_en: 'Family Reunion Visa', name_ar: 'تأشيرة لمّ الشمل', category_id: 'cat-2', price: 900, description: 'Family reunification visa for all countries', requirements: ['Passport copy', 'Family certificate', 'Sponsor letter', 'Bank statement'], is_visible: true },
   // Shipping Services
-  { id: 'svc-6', name_en: 'Local Shipping', name_ar: 'شحن محمي', category_id: 'cat-3', price: 15, description: 'Fast and reliable local delivery within Jordan', requirements: ['Package dimensions', 'Delivery address', 'Phone number'], is_visible: true },
-  { id: 'svc-7', name_en: 'International Shipping', name_ar: 'شحن دومي', category_id: 'cat-3', price: 120, description: 'Worldwide shipping with full tracking and insurance', requirements: ['Package dimensions and weight', 'Destination address', 'Contents declaration'], is_visible: true },
+  { id: 'svc-6', name_en: 'Local Shipping', name_ar: 'شحن محلي', category_id: 'cat-3', price: 15, description: 'Fast and reliable local delivery within Jordan', requirements: ['Package dimensions', 'Delivery address', 'Phone number'], is_visible: true },
+  { id: 'svc-7', name_en: 'International Shipping', name_ar: 'شحن دولي', category_id: 'cat-3', price: 120, description: 'Worldwide shipping with full tracking and insurance', requirements: ['Package dimensions and weight', 'Destination address', 'Contents declaration'], is_visible: true },
   { id: 'svc-13', name_en: 'Express Delivery', name_ar: 'توصيل سريع', category_id: 'cat-3', price: 35, description: 'Same-day or next-day express delivery within the city', requirements: ['Package details', 'Pickup address', 'Delivery address'], is_visible: true },
-  { id: 'svc-14', name_en: 'Freight Shipping', name_ar: 'شحن بصائع', category_id: 'cat-3', price: 500, description: 'Heavy freight and commercial goods shipping worldwide', requirements: ['Cargo weight and dimensions', 'Commercial invoice', 'Destination port'], is_visible: true },
+  { id: 'svc-14', name_en: 'Freight Shipping', name_ar: 'شحن بضائع', category_id: 'cat-3', price: 500, description: 'Heavy freight and commercial goods shipping worldwide', requirements: ['Cargo weight and dimensions', 'Commercial invoice', 'Destination port'], is_visible: true },
   // Transportation Services
   { id: 'svc-8', name_en: 'Airport Transfer', name_ar: 'نقل المطار', category_id: 'cat-4', price: 40, description: 'Comfortable and punctual airport pickup and drop-off', requirements: ['Flight number', 'Arrival time', 'Number of passengers'], is_visible: true },
   { id: 'svc-15', name_en: 'City Tour', name_ar: 'جولة المدينة', category_id: 'cat-4', price: 80, description: 'Guided city tours with professional driver across Jordan', requirements: ['Preferred sites', 'Number of passengers', 'Tour duration'], is_visible: true },
-  { id: 'svc-16', name_en: 'Long Distance Travel', name_ar: 'سفر المسافات الطييلة', category_id: 'cat-4', price: 150, description: 'Comfortable long distance travel between cities', requirements: ['Departure city', 'Destination city', 'Travel date', 'Number of passengers'], is_visible: true },
+  { id: 'svc-16', name_en: 'Long Distance Travel', name_ar: 'سفر المسافات الطويلة', category_id: 'cat-4', price: 150, description: 'Comfortable long distance travel between cities', requirements: ['Departure city', 'Destination city', 'Travel date', 'Number of passengers'], is_visible: true },
   { id: 'svc-17', name_en: 'VIP Chauffeur Service', name_ar: 'خدمة سائق خاص VIP', category_id: 'cat-4', price: 200, description: 'Luxury chauffeur service with premium vehicles for special occasions', requirements: ['Date and duration', 'Pickup location', 'Number of passengers'], is_visible: true },
 ]
 
@@ -44,7 +44,12 @@ export const companies: Company[] = [
 export const staff: Staff[] = []
 
 export const visaNationalities: VisaNationality[] = [
-  { id: 'vn-1', nationality: 'Jordan', flag_emoji: '🇯🇴', visa_types: ['Tourist', 'Business', 'Work', 'Student'], destinations: ['UAE', 'Turkey', 'UK', 'USA', 'Schengen'] },
+  { id: 'vn-1', nationality: 'Jordan', flag_emoji: '🇯🇴', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'UK', 'USA', 'Schengen', 'Canada', 'Germany', 'France'] },
+  { id: 'vn-2', nationality: 'Palestine', flag_emoji: '🇵🇸', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'Jordan', 'UK', 'Germany'] },
+  { id: 'vn-3', nationality: 'Egypt', flag_emoji: '🇪🇬', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Saudi Arabia', 'UK', 'USA', 'Germany', 'Canada'] },
+  { id: 'vn-4', nationality: 'Iraq', flag_emoji: '🇮🇶', visa_types: ['Tourist', 'Work', 'Business', 'Student'], destinations: ['UAE', 'Turkey', 'Jordan', 'UK', 'Germany'] },
+  { id: 'vn-5', nationality: 'Syria', flag_emoji: '🇸🇾', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'Jordan', 'Germany', 'Netherlands'] },
+  { id: 'vn-6', nationality: 'Lebanon', flag_emoji: '🇱🇧', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'France', 'Canada', 'USA', 'Schengen'] },
 ]
 
 export const mockUser = {
