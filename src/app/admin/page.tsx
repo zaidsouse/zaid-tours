@@ -156,7 +156,7 @@ export default function AdminPage() {
     }
     setCatForm({ name_en: '', name_ar: '', icon: '', description: '' })
   }
-  const openEditCat = (cat: Category) => { setEditCat(cat); setCatForm({ name_en: cat.name_en, name_ar: cat.name_ar, icon: cat.icon, description: cat.description }); setShowAddCat(true) }
+  const openEditCat = (cat: Category) => { setEditCat(cat); setCatForm({ name_en: cat����U�V����U�#�6N.name_ar, icon: cat��6���FW67&�F���6N.description }); setShowAddCat(true) }
   const deleteCategory = (id: string) => {
     if (services.some(s => s.category_id === id)) { toast.error('Cannot delete: category has services'); return }
     setCatList(prev => prev.filter(c => c.id !== id)); toast.success('Category deleted')
@@ -244,7 +244,110 @@ export default function AdminPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <button onClick={() => toast.success('Downloading ' + f)} className="p-1.5 hover:bg-blue-50 rounded-lg">
+          <div className="flex overflow-x-auto border-b border-gray-100">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={['px-4 py-3.5 text-sm font-medium whitespace-nowrap transition', tab === t.key ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-900'].join(' ')}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-6">
+
+            {/* ─── ALL REQUESTS ─── */}
+            {tab === 'requests' && (
+              <div>
+                <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+                  <div><h2 className="text-lg font-semibold">All Requests</h2><p className="text-sm text-gray-500">View and manage service requests</p></div>
+                  <div className="flex gap-2 flex-wrap">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-48" />
+                    </div>
+                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-gray-100">
+                      {['Request', 'User', 'Service', 'Date', 'Price', 'Status', 'Actions'].map(h => (
+                        <th key={h} className="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {filteredRequests.map(req => (
+                        <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                          <td className="py-3 px-3">
+                            <p className="font-mono text-xs text-gray-500">{req.request_number}</p>
+                            {req.return_reason && <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded mt-0.5 inline-block">Returned</span>}
+                          </td>
+                          <td className="py-3 px-3 font-medium">{req.user_name}</td>
+                          <td className="py-3 px-3 text-gray-700 max-w-32 truncate">{req.service_name}</td>
+                          <td className="py-3 px-3 text-gray-500 text-xs">{new Date(req.created_at).toLocaleDateString()}</td>
+                          <td className="py-3 px-3 font-semibold">{req.price} USD</td>
+                          <td className="py-3 px-3">
+                            <span className={['text-xs font-medium px-2.5 py-1 rounded-full capitalize', svcBadge[req.service_status] || 'bg-gray-100 text-gray-600'].join(' ')}>{req.service_status}</span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <button onClick={() => setDocsModal(req)} title="View Documents" className="p-1.5 hover:bg-blue-50 rounded-lg transition">
+                                <Paperclip className="w-4 h-4 text-blue-500" />
+                              </button>
+                              <button onClick={() => setReturnModal({ id: req.id, reason: req.return_reason || '' })} title="Return to User" className="p-1.5 hover:bg-orange-50 rounded-lg transition">
+                                <RotateCcw className="w-4 h-4 text-orange-500" />
+                              </button>
+                              <select value={req.service_status} onChange={e => updateStatus(req.id, e.target.value as ServiceStatus)}
+                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                              <button onClick={() => setDeleteConfirm(req.id)} className="p-1.5 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Delete confirm */}
+                {deleteConfirm && (
+                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-2xl p-6 w-80 shadow-xl">
+                      <h3 className="font-semibold mb-2">Delete Request?</h3>
+                      <p className="text-sm text-gray-500 mb-5">This cannot be undone.</p>
+                      <div className="flex gap-3">
+                        <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
+                        <button onClick={() => deleteRequest(deleteConfirm)} className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm hover:bg-red-700">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Docs modal */}
+                {docsModal && (
+                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-2xl p-6 w-96 shadow-xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold">Documents — {docsModal.request_number}</h3>
+                        <button onClick={() => setDocsModal(null)}><X className="w-4 h-4 text-gray-400" /></button>
+                      </div>
+                      {docsModal.uploaded_files && docsModal.uploaded_files.length > 0 ? (
+                        <div className="space-y-2">
+                          {docsModal.uploaded_files.map((f, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+                              <div className="flex items-center gap-2">
+                                <Paperclip className="w-4 h-4 text-gray-500" />
+                                <span className="text-sm text-gray-700">{f}</span>
+                              </div>
+                              <button onClick={() => toast.success('Downloading ' + f)} className="p-1.5 hover:bg-blue-50 rounded-lg">
                                 <Download className="w-4 h-4 text-blue-500" />
                               </button>
                             </div>
@@ -405,7 +508,7 @@ export default function AdminPage() {
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {visaList.map(vn => (
+                  {visaList.mapv(n => (
                     <div key={vn.id} className="p-4 rounded-xl border border-gray-100 hover:bg-gray-50">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
@@ -443,95 +546,6 @@ export default function AdminPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-xs font-medium text-gray-600 mb-1 block">Nationality</label>
-                            <input value={visaForm.nationality} onChange={e => setVisaForm(p => ({ ...p, nationality: e.target.value }))}
-                              placeholder="e.g. Jordan" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-gray-600 mb-1 block">Flag Emoji</label>
-                            <input value={visaForm.flag_emoji} onChange={e => setVisaForm(p => ({ ...p, flag_emoji: e.target.value }))}
-                              placeholder="🇯🇴" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-gray-600 mb-2 block">Visa Types</label>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {['Tourist', 'Work', 'Business', 'Student', 'Transit', 'Family'].map(vt => (
-                              <button key={vt} onClick={() => setVisaForm(p => ({ ...p, visa_types: p.visa_types.includes(vt) ? p.visa_types.filter(x => x !== vt) : [...p.visa_types, vt] }))}
-                                className={['text-xs px-3 py-1.5 rounded-full border transition', visaForm.visa_types.includes(vt) ? 'bg-green-100 text-green-700 border-green-300' : 'border-gray-200 text-gray-600 hover:border-gray-300'].join(' ')}>
-                                {visaForm.visa_types.includes(vt) ? '✓ ' : ''}{vt}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-gray-600 mb-2 block">Destinations</label>
-                          <div className="flex gap-2 mb-2">
-                            <input value={visaForm.destInput} onChange={e => setVisaForm(p => ({ ...p, destInput: e.target.value }))}
-                              onKeyDown={e => { if (e.key === 'Enter' && visaForm.destInput.trim()) { setVisaForm(p => ({ ...p, destinations: [...p.destinations, p.destInput.trim()], destInput: '' })) } }}
-                              placeholder="Country name + Enter" className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <button onClick={() => { if (visaForm.destInput.trim()) setVisaForm(p => ({ ...p, destinations: [...p.destinations, p.destInput.trim()], destInput: '' })) }}
-                              className="px-3 py-2 bg-gray-100 rounded-xl text-sm hover:bg-gray-200"><Plus className="w-4 h-4" /></button>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {visaForm.destinations.map((d, i) => (
-                              <span key={i} className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">
-                                {d}
-                                <button onClick={() => setVisaForm(p => ({ ...p, destinations: p.destinations.filter((_, j) => j !== i) }))}><X className="w-3 h-3" /></button>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 mt-5">
-                        <button onClick={() => setShowAddVisa(false)} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
-                        <button onClick={handleSaveVisa} className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-sm hover:bg-blue-700">{editVisa ? 'Save Changes' : 'Add Nationality'}</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ─── COMPANIES ─── */}
-            {tab === 'companies' && (
-              <div>
-                <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-                  <div><h2 className="text-lg font-semibold">Companies Management</h2><p className="text-sm text-gray-500">Manage company accounts and send communications</p></div>
-                  <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input value={companySearch} onChange={e => setCompanySearch(e.target.value)} placeholder="Search companies..."
-                      className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-52" />
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead><tr className="border-b border-gray-100">
-                      {['Company', 'Contact', 'Country', 'Services', 'Status', 'Actions'].map(h => (
-                        <th key={h} className="text-left py-3 px-3 text-xs font-semibold text-gray-400 uppercase">{h}</th>
-                      ))}
-                    </tr></thead>
-                    <tbody>
-                      {filteredCompanies.map(co => (
-                        <tr key={co.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                          <td className="py-3 px-3 font-medium">{co.name}</td>
-                          <td className="py-3 px-3 text-gray-500 text-xs">{co.email}<br />{co.phone}</td>
-                          <td className="py-3 px-3">{co.country === 'Jordan' ? '🇯🇴' : '🌍'} {co.country}</td>
-                          <td className="py-3 px-3">{co.total_services}</td>
-                          <td className="py-3 px-3"><span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 capitalize">{co.status}</span></td>
-                          <td className="py-3 px-3">
-                            <div className="flex gap-1 flex-wrap">
-                              <button onClick={() => toast.info('Viewing ' + co.name)} className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1">
-                                <Eye className="w-3 h-3" /> View
-                              </button>
-                              <button onClick={() => { setEmailModal({ email: co.email, name: co.name }); setEmailForm({ subject: 'Message from Zaid Tours — ' + co.name, body: '' }) }}
-                                className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1">
-                                <Mail className="w-3 h-3" /> Email
-                              </button>
-                              <button onClick={() => handleDownloadPDF(co.name)}
-                                className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1">
-                                <Download className="w-3 h-3" /> PDF
-                              </button>
-     0             <label className="text-xs font-medium text-gray-600 mb-1 block">Nationality</label>
                             <input value={visaForm.nationality} onChange={e => setVisaForm(p => ({ ...p, nationality: e.target.value }))}
                               placeholder="e.g. Jordan" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                           </div>
