@@ -44,12 +44,12 @@ export const companies: Company[] = [
 export const staff: Staff[] = []
 
 export const visaNationalities: VisaNationality[] = [
-  { id: 'vn-1', nationality: 'Jordan', flag_emoji: '🇯🇴', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'UK', 'USA', 'Schengen', 'Canada', 'Germany', 'France'] },
-  { id: 'vn-2', nationality: 'Palestine', flag_emoji: '🇵🇸', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'Jordan', 'UK', 'Germany'] },
-  { id: 'vn-3', nationality: 'Egypt', flag_emoji: '🇪🇬', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Saudi Arabia', 'UK', 'USA', 'Germany', 'Canada'] },
-  { id: 'vn-4', nationality: 'Iraq', flag_emoji: '🇮🇶', visa_types: ['Tourist', 'Work', 'Business', 'Student'], destinations: ['UAE', 'Turkey', 'Jordan', 'UK', 'Germany'] },
-  { id: 'vn-5', nationality: 'Syria', flag_emoji: '🇸🇾', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'Jordan', 'Germany', 'Netherlands'] },
-  { id: 'vn-6', nationality: 'Lebanon', flag_emoji: '🇱🇧', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'France', 'Canada', 'USA', 'Schengen'] },
+  { id: 'vn-1', nationality: 'Jordan', flag_emoji: '🇯🇴', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'UK', 'USA', 'Schengen', 'Canada', 'Germany', 'France'], visa_prices: { Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400, Family: 600 } },
+  { id: 'vn-2', nationality: 'Palestine', flag_emoji: '🇵🇸', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'Jordan', 'UK', 'Germany'], visa_prices: { Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400, Family: 600 } },
+  { id: 'vn-3', nationality: 'Egypt', flag_emoji: '🇪🇬', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Saudi Arabia', 'UK', 'USA', 'Germany', 'Canada'], visa_prices: { Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400, Family: 600 } },
+  { id: 'vn-4', nationality: 'Iraq', flag_emoji: '🇮🇶', visa_types: ['Tourist', 'Work', 'Business', 'Student'], destinations: ['UAE', 'Turkey', 'Jordan', 'UK', 'Germany'], visa_prices: { Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400, Family: 600 } },
+  { id: 'vn-5', nationality: 'Syria', flag_emoji: '🇸🇾', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'Jordan', 'Germany', 'Netherlands'], visa_prices: { Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400, Family: 600 } },
+  { id: 'vn-6', nationality: 'Lebanon', flag_emoji: '🇱🇧', visa_types: ['Tourist', 'Work', 'Business', 'Student', 'Transit'], destinations: ['UAE', 'Turkey', 'France', 'Canada', 'USA', 'Schengen'], visa_prices: { Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400, Family: 600 } },
 ]
 
 export const mockUser = {

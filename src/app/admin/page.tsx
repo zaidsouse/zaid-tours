@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { LogOut, RefreshCw, Shield, Trash2, Eye, Pencil, Plus, Search, Download, RotateCcw, X, Mail, FileText, Check, AlertCircle, Paperclip } from 'lucide-react'
 import { requests as initRequests, services as initServices, companies as initCompanies, categories as initCategories, visaNationalities as initVisa, staff as initStaff } from '@/lib/mock-data'
+import { getVisaNationalities, saveVisaNationalities } from '@/lib/visa-store'
 import { Request, Service, PaymentStatus, ServiceStatus, VisaNationality, Staff, Category } from '@/lib/types'
 
 const payBadge: Record<PaymentStatus, string> = { paid: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700', failed: 'bg-red-100 text-red-700' }
@@ -19,7 +20,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('requests')
   const [requests, setRequests] = useState<Request[]>(initRequests)
   const [services, setServices] = useState<Service[]>(initServices)
-  const [visaList, setVisaList] = useState<VisaNationality[]>(initVisa)
+  const [visaList, setVisaList] = useState<VisaNationality[]>(() => getVisaNationalities())
   const [staffList, setStaffList] = useState<Staff[]>(initStaff)
   const [catList, setCatList] = useState<Category[]>(initCategories)
 
@@ -39,7 +40,7 @@ export default function AdminPage() {
   // Visa Management
   const [showAddVisa, setShowAddVisa] = useState(false)
   const [editVisa, setEditVisa] = useState<VisaNationality | null>(null)
-  const [visaForm, setVisaForm] = useState({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', destinations: [] as string[], visa_types: [] as string[] })
+  const [visaForm, setVisaForm] = useState({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', destinations: [] as string[], visa_types: [] as string[], visa_prices: {} as Record<string, number> })
 
   // Staff Management
   const [showAddStaff, setShowAddStaff] = useState(false)
@@ -115,20 +116,22 @@ export default function AdminPage() {
   const openVisaModal = (vn?: VisaNationality) => {
     if (vn) {
       setEditVisa(vn)
-      setVisaForm({ nationality: vn.nationality, flag_emoji: vn.flag_emoji, destInput: '', typeInput: '', destinations: [...vn.destinations], visa_types: [...vn.visa_types] })
+      setVisaForm({ nationality: vn.nationality, flag_emoji: vn.flag_emoji, destInput: '', typeInput: '', destinations: [...vn.destinations], visa_types: [...vn.visa_types], visa_prices: { ...(vn.visa_prices || {}) } })
     } else {
       setEditVisa(null)
-      setVisaForm({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', destinations: [], visa_types: [] })
+      setVisaForm({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', destinations: [], visa_types: [], visa_prices: {} })
     }
     setShowAddVisa(true)
   }
   const handleSaveVisa = () => {
     if (!visaForm.nationality) { toast.error('Nationality is required'); return }
     if (editVisa) {
-      setVisaList(prev => prev.map(v => v.id === editVisa.id ? { ...v, nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types } : v))
+      const updated = visaList.map(v => v.id === editVisa.id ? { ...v, nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types, visa_prices: visaForm.visa_prices } : v)
+      setVisaList(updated); saveVisaNationalities(updated)
       toast.success('Nationality updated')
     } else {
-      setVisaList(prev => [...prev, { id: 'vn-' + Date.now(), nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types }])
+      const updated = [...visaList, { id: 'vn-' + Date.now(), nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types, visa_prices: visaForm.visa_prices }]
+      setVisaList(updated); saveVisaNationalities(updated)
       toast.success('Nationality added')
     }
     setShowAddVisa(false)
@@ -566,6 +569,23 @@ export default function AdminPage() {
                             ))}
                           </div>
                         </div>
+                        {visaForm.visa_types.length > 0 && (
+                          <div>
+                            <label className="text-xs font-medium text-gray-600 mb-2 block">Prices per Visa Type (USD)</label>
+                            <div className="space-y-2">
+                              {visaForm.visa_types.map(vt => (
+                                <div key={vt} className="flex items-center gap-3">
+                                  <span className="text-sm text-gray-700 w-24 shrink-0">{vt}</span>
+                                  <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">$</span>
+                                    <input type="number" min="0" value={visaForm.visa_prices[vt] ?? ''} onChange={e => setVisaForm(p => ({ ...p, visa_prices: { ...p.visa_prices, [vt]: Number(e.target.value) } }))} placeholder="0" className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  </div>
+                                  <span className="text-xs text-gray-400">USD</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <div>
                           <label className="text-xs font-medium text-gray-600 mb-2 block">Destinations</label>
                           <div className="flex gap-2 mb-2">

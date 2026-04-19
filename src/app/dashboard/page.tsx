@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw } from 'lucide-react'
-import { mockUser, categories, services as allServices, visaNationalities } from '@/lib/mock-data'
+import { mockUser, categories, services as allServices } from '@/lib/mock-data'
+import { getVisaNationalities } from '@/lib/visa-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
 
 const VISA_REQS: Record<string, string[]> = {
@@ -14,9 +15,7 @@ const VISA_REQS: Record<string, string[]> = {
   Student: ['Passport copy', 'University acceptance letter', 'Bank statement', 'Academic transcripts', 'Health insurance'],
   Transit: ['Passport copy', 'Onward flight ticket', 'Destination country visa/entry permit'],
 }
-const VISA_PRICES: Record<string, number> = {
-  Tourist: 800, Work: 1500, Business: 1200, Student: 1000, Transit: 400,
-}
+
 
 const categoryIcons: Record<string, React.ReactNode> = {
   'cat-1': <FileText className="w-5 h-5" />,
@@ -47,6 +46,7 @@ const initRequests: Request[] = [
 
 export default function DashboardPage() {
   const router = useRouter()
+  const [visaNationalities] = useState(() => getVisaNationalities())
   const [user] = useState(mockUser)
   const [userRequests, setUserRequests] = useState<Request[]>(initRequests)
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
@@ -141,7 +141,7 @@ export default function DashboardPage() {
       service_id: 'svc-visa-' + visaType.toLowerCase(),
       service_name: visaType + ' Visa — ' + visaDest,
       category_name: 'Visa Services', country: visaDest,
-      price: VISA_PRICES[visaType] || 800, payment_status: 'pending', service_status: 'pending',
+      price: (currentNatData?.visa_prices?.[visaType]) ?? 800, payment_status: 'pending', service_status: 'pending',
       notes: reqNotes, uploaded_files: uploadedFiles,
       visa_nationality: visaNat, visa_destination: visaDest, visa_type: visaType,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
@@ -373,7 +373,7 @@ export default function DashboardPage() {
                       <button key={vt} onClick={() => { setVisaType(vt); setVisaStep(4) }}
                         className="p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:shadow-sm transition text-center">
                         <p className="font-semibold text-gray-900 text-sm">{vt} Visa</p>
-                        <p className="text-xs text-blue-600 mt-1">{VISA_PRICES[vt] || 800} USD</p>
+                        <p className="text-xs text-blue-600 mt-1">{(currentNatData?.visa_prices?.[vt]) ?? 800} USD</p>
                       </button>
                     ))}
                   </div>
@@ -392,7 +392,7 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="font-semibold text-gray-900">{visaType} Visa — {visaDest}</p>
-                        <p className="text-sm text-blue-600 font-medium">{VISA_PRICES[visaType] || 800} USD</p>
+                        <p className="text-sm text-blue-600 font-medium">{(currentNatData?.visa_prices?.[visaType]) ?? 800} USD</p>
                       </div>
                     </div>
                     {VISA_REQS[visaType] && (

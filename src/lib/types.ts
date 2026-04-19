@@ -85,4 +85,5 @@ export interface VisaNationality {
   flag_emoji: string
   visa_types: string[]
   destinations: string[]
+  visa_prices: Record<string, number>
 }
