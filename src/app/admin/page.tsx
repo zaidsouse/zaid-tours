@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, L
 import { LogOut, RefreshCw, Shield, Trash2, Eye, Pencil, Plus, Search, Download, RotateCcw, X, Mail, FileText, Check, AlertCircle, Paperclip } from 'lucide-react'
 import { requests as initRequests, services as initServices, companies as initCompanies, categories as initCategories, visaNationalities as initVisa, staff as initStaff } from '@/lib/mock-data'
 import { getVisaNationalities, saveVisaNationalities } from '@/lib/visa-store'
+import { getRequests, saveRequests } from '@/lib/request-store'
 import { getUserFile, storeAdminFile, downloadFile } from '@/lib/file-store'
 import { Request, Service, PaymentStatus, ServiceStatus, VisaNationality, Staff, Category } from '@/lib/types'
 
@@ -19,7 +20,7 @@ type Tab = 'requests' | 'services' | 'visa' | 'companies' | 'staff' | 'categorie
 export default function AdminPage() {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('requests')
-  const [requests, setRequests] = useState<Request[]>(initRequests)
+  const [requests, setRequests] = useState<Request[]>(() => getRequests())
   const [services, setServices] = useState<Service[]>(initServices)
   const [visaList, setVisaList] = useState<VisaNationality[]>(() => getVisaNationalities())
   const [staffList, setStaffList] = useState<Staff[]>(initStaff)
@@ -77,16 +78,16 @@ export default function AdminPage() {
   const filteredCompanies = initCompanies.filter(c => c.name.toLowerCase().includes(companySearch.toLowerCase()) || c.email.toLowerCase().includes(companySearch.toLowerCase()))
 
   const updateStatus = (id: string, status: ServiceStatus) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, service_status: status } : r))
+    setRequests(prev => { const u = prev.map(r => r.id === id ? { ...r, service_status: status } : r); saveRequests(u); return u })
     toast.success('Status updated')
   }
   const deleteRequest = (id: string) => {
-    setRequests(prev => prev.filter(r => r.id !== id))
+    setRequests(prev => { const u = prev.filter(r => r.id !== id); saveRequests(u); return u })
     setDeleteConfirm(null); toast.success('Request deleted')
   }
   const handleReturnRequest = () => {
     if (!returnModal || !returnModal.reason.trim()) { toast.error('Please enter a reason'); return }
-    setRequests(prev => prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending', return_reason: returnModal.reason } : r))
+    setRequests(prev => { const u = prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending', return_reason: returnModal.reason } : r); saveRequests(u); return u })
     setReturnModal(null); toast.success('Request returned to user')
   }
 
@@ -346,9 +347,13 @@ export default function AdminPage() {
                           if (!files.length || !docsModal) return
                           await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
                           const names = files.map(f => f.name)
-                          setRequests(prev => prev.map(r => r.id === docsModal.id
-                            ? { ...r, admin_files: [...(r.admin_files || []), ...names] }
-                            : r))
+                          setRequests(prev => {
+                            const u = prev.map(r => r.id === docsModal.id
+                              ? { ...r, admin_files: [...(r.admin_files || []), ...names] }
+                              : r)
+                            saveRequests(u)
+                            return u
+                          })
                           setDocsModal(prev => prev ? { ...prev, admin_files: [...(prev.admin_files || []), ...names] } : prev)
                           if (adminFileRef.current) adminFileRef.current.value = ''
                           toast.success(files.length + ' file(s) sent to user!')

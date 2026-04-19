@@ -7,6 +7,7 @@ import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, 
 import { mockUser, categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
 import { storeUserFile, getAdminFile, downloadFile } from '@/lib/file-store'
+import { getRequests, saveRequests } from '@/lib/request-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
 
 
@@ -43,7 +44,10 @@ export default function DashboardPage() {
   const router = useRouter()
   const [visaNationalities] = useState(() => getVisaNationalities())
   const [user] = useState(mockUser)
-  const [userRequests, setUserRequests] = useState<Request[]>(initRequests)
+  const [userRequests, setUserRequests] = useState<Request[]>(() => {
+    const all = getRequests()
+    return all.filter(r => r.user_email === mockUser.email)
+  })
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [visaStep, setVisaStep] = useState(1)
@@ -122,7 +126,12 @@ export default function DashboardPage() {
       notes: reqNotes, uploaded_files: uploadedFiles,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }
-    setUserRequests(prev => [newReq, ...prev])
+    setUserRequests(prev => {
+      const updated = [newReq, ...prev]
+      const allReqs = getRequests().filter(r => r.user_email !== user.email)
+      saveRequests([newReq, ...allReqs])
+      return updated
+    })
     await Promise.all(pendingFileObjects.map(f => storeUserFile(newReq.id, f)))
     toast.success('Request submitted successfully!')
     resetForm(); setSubmitting(false)
@@ -144,7 +153,12 @@ export default function DashboardPage() {
       visa_nationality: visaNat, visa_destination: visaDest, visa_type: visaType,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }
-    setUserRequests(prev => [newReq, ...prev])
+    setUserRequests(prev => {
+      const updated = [newReq, ...prev]
+      const allReqs = getRequests().filter(r => r.user_email !== user.email)
+      saveRequests([newReq, ...allReqs])
+      return updated
+    })
     toast.success('Visa request submitted successfully!')
     await Promise.all(pendingFileObjects.map(f => storeUserFile(newReq.id, f)))
     resetForm(); setSubmitting(false)
