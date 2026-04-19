@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, L
 import { LogOut, RefreshCw, Shield, Trash2, Eye, Pencil, Plus, Search, Download, RotateCcw, X, Mail, FileText, Check, AlertCircle, Paperclip } from 'lucide-react'
 import { requests as initRequests, services as initServices, companies as initCompanies, categories as initCategories, visaNationalities as initVisa, staff as initStaff } from '@/lib/mock-data'
 import { getVisaNationalities, saveVisaNationalities } from '@/lib/visa-store'
+import { getUserFile, storeAdminFile, downloadFile } from '@/lib/file-store'
 import { Request, Service, PaymentStatus, ServiceStatus, VisaNationality, Staff, Category } from '@/lib/types'
 
 const payBadge: Record<PaymentStatus, string> = { paid: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700', failed: 'bg-red-100 text-red-700' }
@@ -29,6 +30,7 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [docsModal, setDocsModal] = useState<Request | null>(null)
+  const adminFileRef = useRef<HTMLInputElement | null>(null)
   const [returnModal, setReturnModal] = useState<{ id: string; reason: string } | null>(null)
 
   // Service Management
@@ -336,29 +338,74 @@ export default function AdminPage() {
                 )}
                 {/* Docs modal */}
                 {docsModal && (
-                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-6 w-96 shadow-xl">
+                  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                      <input ref={adminFileRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden"
+                        onChange={async e => {
+                          const files = Array.from(e.target.files || [])
+                          if (\!files.length || \!docsModal) return
+                          await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
+                          const names = files.map(f => f.name)
+                          setRequests(prev => prev.map(r => r.id === docsModal.id
+                            ? { ...r, admin_files: [...(r.admin_files || []), ...names] }
+                            : r))
+                          setDocsModal(prev => prev ? { ...prev, admin_files: [...(prev.admin_files || []), ...names] } : prev)
+                          if (adminFileRef.current) adminFileRef.current.value = ''
+                          toast.success(files.length + ' file(s) sent to user\!')
+                        }}
+                      />
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold">Documents — {docsModal.request_number}</h3>
                         <button onClick={() => setDocsModal(null)}><X className="w-4 h-4 text-gray-400" /></button>
                       </div>
+
+                      {/* User uploaded files */}
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">User Documents</p>
                       {docsModal.uploaded_files && docsModal.uploaded_files.length > 0 ? (
-                        <div className="space-y-2">
-                          {docsModal.uploaded_files.map((f, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
-                              <div className="flex items-center gap-2">
-                                <Paperclip className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm text-gray-700">{f}</span>
+                        <div className="space-y-2 mb-4">
+                          {docsModal.uploaded_files.map((f, i) => {
+                            const data = getUserFile(docsModal.id, f)
+                            return (
+                              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className="flex items-center gap-2">
+                                  <Paperclip className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm text-gray-700">{f}</span>
+                                </div>
+                                {data ? (
+                                  <button onClick={() => downloadFile(data, f)} className="p-1.5 hover:bg-blue-50 rounded-lg" title="Download">
+                                    <Download className="w-4 h-4 text-blue-500" />
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-gray-400 px-2">Demo file</span>
+                                )}
                               </div>
-                              <button onClick={() => toast.success('Downloading ' + f)} className="p-1.5 hover:bg-blue-50 rounded-lg">
-                                <Download className="w-4 h-4 text-blue-500" />
-                              </button>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-400 text-center py-6">No documents uploaded for this request</p>
+                        <p className="text-sm text-gray-400 text-center py-3 mb-4">No documents uploaded</p>
                       )}
+
+                      {/* Admin send file section */}
+                      <div className="border-t border-gray-100 pt-4">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Send Document to User</p>
+                        {docsModal.admin_files && docsModal.admin_files.length > 0 && (
+                          <div className="space-y-1.5 mb-3">
+                            {docsModal.admin_files.map((f, i) => (
+                              <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded-lg border border-green-100">
+                                <Paperclip className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                                <span className="text-xs text-green-700 flex-1 truncate">{f}</span>
+                                <span className="text-xs text-green-500">Sent ✓</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <button onClick={() => adminFileRef.current?.click()}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-blue-200 rounded-xl text-sm text-blue-600 hover:bg-blue-50 transition">
+                          <Plus className="w-4 h-4" /> Upload & Send File to User
+                        </button>
+                      </div>
+
                       <button onClick={() => setDocsModal(null)} className="w-full mt-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Close</button>
                     </div>
                   </div>

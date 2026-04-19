@@ -66,6 +66,7 @@ export interface Request {
   visa_nationality?: string
   visa_destination?: string
   visa_type?: string
+  admin_files?: string[]
   created_at: string
   updated_at: string
 }

@@ -3,9 +3,10 @@ import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw } from 'lucide-react'
+import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download } from 'lucide-react'
 import { mockUser, categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
+import { storeUserFile, getAdminFile, downloadFile } from '@/lib/file-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
 
 
@@ -50,6 +51,7 @@ export default function DashboardPage() {
   const [visaDest, setVisaDest] = useState('')
   const [visaType, setVisaType] = useState('')
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
+  const [pendingFileObjects, setPendingFileObjects] = useState<File[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const [reqNotes, setReqNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -61,7 +63,7 @@ export default function DashboardPage() {
   const resetForm = () => {
     setSelectedCat(null); setSelectedService(null)
     setVisaStep(1); setVisaNat(''); setVisaDest(''); setVisaType('')
-    setUploadedFiles([]); setReqNotes('')
+    setUploadedFiles([]); setPendingFileObjects([]); setReqNotes('')
   }
 
   const handleLogout = () => {
@@ -81,6 +83,7 @@ export default function DashboardPage() {
     const files = Array.from(e.target.files || [])
     if (files.length > 0) {
       setUploadedFiles(prev => [...prev, ...files.map(f => f.name)])
+      setPendingFileObjects(prev => [...prev, ...files])
       if (fileRef.current) fileRef.current.value = ''
       toast.success(files.length + ' file(s) uploaded')
     }
@@ -120,6 +123,7 @@ export default function DashboardPage() {
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }
     setUserRequests(prev => [newReq, ...prev])
+    await Promise.all(pendingFileObjects.map(f => storeUserFile(newReq.id, f)))
     toast.success('Request submitted successfully!')
     resetForm(); setSubmitting(false)
   }
@@ -142,6 +146,7 @@ export default function DashboardPage() {
     }
     setUserRequests(prev => [newReq, ...prev])
     toast.success('Visa request submitted successfully!')
+    await Promise.all(pendingFileObjects.map(f => storeUserFile(newReq.id, f)))
     resetForm(); setSubmitting(false)
   }
 
@@ -457,6 +462,26 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-orange-700">Action Required — Please resubmit with corrections</p>
                           <p className="text-xs text-orange-600 mt-0.5">{req.return_reason}</p>
+                        </div>
+                      </div>
+                    )}
+                    {req.admin_files && req.admin_files.length > 0 && (
+                      <div className="flex items-start gap-2 bg-green-50 border-b border-green-100 px-4 py-3">
+                        <Download className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-green-700">Document Ready — Download from Admin</p>
+                          <div className="flex flex-wrap gap-2 mt-1.5">
+                            {req.admin_files.map((f, i) => {
+                              const data = getAdminFile(req.id, f)
+                              return data ? (
+                                <button key={i} onClick={() => downloadFile(data, f)} className="flex items-center gap-1 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-lg hover:bg-green-100 transition">
+                                  <Paperclip className="w-3 h-3" /> {f}
+                                </button>
+                              ) : (
+                                <span key={i} className="text-xs text-green-600 flex items-center gap-1"><Paperclip className="w-3 h-3" />{f}</span>
+                              )
+                            })}
+                          </div>
                         </div>
                       </div>
                     )}
