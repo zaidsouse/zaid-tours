@@ -156,7 +156,7 @@ export default function AdminPage() {
     }
     setCatForm({ name_en: '', name_ar: '', icon: '', description: '' })
   }
-  const openEditCat = (cat: Category) => { setEditCat(cat); setCatForm({ name_en: cat����U�V����U�#�6N.name_ar, icon: cat��6���FW67&�F���6N.description }); setShowAddCat(true) }
+  const openEditCat = (cat: Category) => { setEditCat(cat); setCatForm({ name_en: cat.name_en, name_ar: cat.name_ar, icon: cat.icon, description: cat.description }); setShowAddCat(true) }
   const deleteCategory = (id: string) => {
     if (services.some(s => s.category_id === id)) { toast.error('Cannot delete: category has services'); return }
     setCatList(prev => prev.filter(c => c.id !== id)); toast.success('Category deleted')
@@ -508,7 +508,7 @@ export default function AdminPage() {
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {visaList.mapv(n => (
+                  {visaList.map(vn => (
                     <div key={vn.id} className="p-4 rounded-xl border border-gray-100 hover:bg-gray-50">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
