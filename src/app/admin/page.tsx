@@ -40,7 +40,7 @@ export default function AdminPage() {
   // Visa Management
   const [showAddVisa, setShowAddVisa] = useState(false)
   const [editVisa, setEditVisa] = useState<VisaNationality | null>(null)
-  const [visaForm, setVisaForm] = useState({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', destinations: [] as string[], visa_types: [] as string[], visa_prices: {} as Record<string, number> })
+  const [visaForm, setVisaForm] = useState({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', reqInput: {} as Record<string, string>, destinations: [] as string[], visa_types: [] as string[], visa_prices: {} as Record<string, number>, visa_reqs: {} as Record<string, string[]> })
 
   // Staff Management
   const [showAddStaff, setShowAddStaff] = useState(false)
@@ -116,21 +116,21 @@ export default function AdminPage() {
   const openVisaModal = (vn?: VisaNationality) => {
     if (vn) {
       setEditVisa(vn)
-      setVisaForm({ nationality: vn.nationality, flag_emoji: vn.flag_emoji, destInput: '', typeInput: '', destinations: [...vn.destinations], visa_types: [...vn.visa_types], visa_prices: { ...(vn.visa_prices || {}) } })
+      setVisaForm({ nationality: vn.nationality, flag_emoji: vn.flag_emoji, destInput: '', typeInput: '', reqInput: {}, destinations: [...vn.destinations], visa_types: [...vn.visa_types], visa_prices: { ...(vn.visa_prices || {}) }, visa_reqs: JSON.parse(JSON.stringify(vn.visa_reqs || {})) })
     } else {
       setEditVisa(null)
-      setVisaForm({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', destinations: [], visa_types: [], visa_prices: {} })
+      setVisaForm({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', reqInput: {}, destinations: [], visa_types: [], visa_prices: {}, visa_reqs: {} })
     }
     setShowAddVisa(true)
   }
   const handleSaveVisa = () => {
     if (!visaForm.nationality) { toast.error('Nationality is required'); return }
     if (editVisa) {
-      const updated = visaList.map(v => v.id === editVisa.id ? { ...v, nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types, visa_prices: visaForm.visa_prices } : v)
+      const updated = visaList.map(v => v.id === editVisa.id ? { ...v, nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types, visa_prices: visaForm.visa_prices, visa_reqs: visaForm.visa_reqs } : v)
       setVisaList(updated); saveVisaNationalities(updated)
       toast.success('Nationality updated')
     } else {
-      const updated = [...visaList, { id: 'vn-' + Date.now(), nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types, visa_prices: visaForm.visa_prices }]
+      const updated = [...visaList, { id: 'vn-' + Date.now(), nationality: visaForm.nationality, flag_emoji: visaForm.flag_emoji, destinations: visaForm.destinations, visa_types: visaForm.visa_types, visa_prices: visaForm.visa_prices, visa_reqs: visaForm.visa_reqs }]
       setVisaList(updated); saveVisaNationalities(updated)
       toast.success('Nationality added')
     }
@@ -581,6 +581,37 @@ export default function AdminPage() {
                                     <input type="number" min="0" value={visaForm.visa_prices[vt] ?? ''} onChange={e => setVisaForm(p => ({ ...p, visa_prices: { ...p.visa_prices, [vt]: Number(e.target.value) } }))} placeholder="0" className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                   </div>
                                   <span className="text-xs text-gray-400">USD</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {visaForm.visa_types.length > 0 && (
+                          <div>
+                            <label className="text-xs font-medium text-gray-600 mb-2 block">Requirements per Visa Type</label>
+                            <div className="space-y-3">
+                              {visaForm.visa_types.map(vt => (
+                                <div key={vt} className="border border-gray-100 rounded-xl p-3 bg-gray-50">
+                                  <p className="text-xs font-semibold text-gray-700 mb-2">{vt} Visa</p>
+                                  <div className="flex gap-2 mb-2">
+                                    <input
+                                      value={visaForm.reqInput[vt] || ''}
+                                      onChange={e => setVisaForm(p => ({ ...p, reqInput: { ...p.reqInput, [vt]: e.target.value } }))}
+                                      onKeyDown={e => { if (e.key === 'Enter' && (visaForm.reqInput[vt] || '').trim()) { const val = visaForm.reqInput[vt].trim(); setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: [...(p.visa_reqs[vt] || []), val] }, reqInput: { ...p.reqInput, [vt]: '' } })) } }}
+                                      placeholder="Add requirement + Enter"
+                                      className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    />
+                                    <button onClick={() => { const val = (visaForm.reqInput[vt] || '').trim(); if (val) setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: [...(p.visa_reqs[vt] || []), val] }, reqInput: { ...p.reqInput, [vt]: '' } })) }} className="px-2 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"><Plus className="w-3 h-3" /></button>
+                                  </div>
+                                  <div className="flex flex-col gap-1">
+                                    {(visaForm.visa_reqs[vt] || []).map((req, i) => (
+                                      <div key={i} className="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-gray-100">
+                                        <span className="text-xs text-gray-700">• {req}</span>
+                                        <button onClick={() => setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: (p.visa_reqs[vt] || []).filter((_, j) => j \!== i) } }))} className="text-red-400 hover:text-red-600 ml-2"><X className="w-3 h-3" /></button>
+                                      </div>
+                                    ))}
+                                    {(visaForm.visa_reqs[vt] || []).length === 0 && <p className="text-xs text-gray-400 italic">No requirements added yet</p>}
+                                  </div>
                                 </div>
                               ))}
                             </div>

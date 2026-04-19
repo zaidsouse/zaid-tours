@@ -86,4 +86,5 @@ export interface VisaNationality {
   visa_types: string[]
   destinations: string[]
   visa_prices: Record<string, number>
+  visa_reqs: Record<string, string[]>
 }

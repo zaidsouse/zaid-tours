@@ -8,13 +8,7 @@ import { mockUser, categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
 
-const VISA_REQS: Record<string, string[]> = {
-  Tourist: ['Passport copy', 'Bank statement (3 months)', 'Hotel booking confirmation', 'Round-trip flight ticket', 'Travel insurance'],
-  Work: ['Passport copy', 'Employment contract', 'Bank statement', 'Work permit approval letter', 'Medical certificate'],
-  Business: ['Passport copy', 'Company invitation letter', 'Bank statement', 'Business registration'],
-  Student: ['Passport copy', 'University acceptance letter', 'Bank statement', 'Academic transcripts', 'Health insurance'],
-  Transit: ['Passport copy', 'Onward flight ticket', 'Destination country visa/entry permit'],
-}
+
 
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -395,11 +389,11 @@ export default function DashboardPage() {
                         <p className="text-sm text-blue-600 font-medium">{(currentNatData?.visa_prices?.[visaType]) ?? 800} USD</p>
                       </div>
                     </div>
-                    {VISA_REQS[visaType] && (
+                    {(currentNatData?.visa_reqs?.[visaType] || []).length > 0 && (
                       <div className="mb-4">
                         <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Required Documents</p>
                         <div className="flex flex-wrap gap-2">
-                          {VISA_REQS[visaType].map((r, i) => (
+                          {(currentNatData?.visa_reqs?.[visaType] || []).map((r, i) => (
                             <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{r}</span>
                           ))}
                         </div>
