@@ -82,7 +82,7 @@ export default function AdminPage() {
     toast.success('Status updated')
   }
   const deleteRequest = (id: string) => {
-    setRequests(prev => { const u: Request[] = prev.filter(r => r.id \!== id); saveRequests(u); return u })
+    setRequests(prev => { const u: Request[] = prev.filter(r => r.id !== id); saveRequests(u); return u })
     setDeleteConfirm(null); toast.success('Request deleted')
   }
   const handleReturnRequest = () => {
