@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download, RefreshCw } from 'lucide-react'
 import { mockUser, categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
-import { storeUserFile, downloadFile } from '@/lib/file-store'
+import { storeUserFile, getAdminFile, downloadFile } from '@/lib/file-store'
 import { getRequests, saveRequests } from '@/lib/request-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
 
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                           <p className="text-xs font-semibold text-green-700">Document Ready — Download from Admin</p>
                           <div className="flex flex-wrap gap-2 mt-1.5">
                             {req.admin_files.map((f, i) => {
-                              const data = req.admin_file_data?.[f] ?? null
+                              const data = getAdminFile(req.id, f) ?? req.admin_file_data?.[f] ?? null
                               return data ? (
                                 <button key={i} onClick={() => downloadFile(data, f)} className="flex items-center gap-1 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-lg hover:bg-green-100 transition">
                                   <Paperclip className="w-3 h-3" /> {f}

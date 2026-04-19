@@ -357,31 +357,19 @@ export default function AdminPage() {
                         onChange={async e => {
                           const files = Array.from(e.target.files || [])
                           if (!files.length || !docsModal) return
-                          // Read base64 and embed directly in request object so user can download cross-session
-                          const fileEntries: Array<{name: string, data: string}> = await Promise.all(
-                            files.map(f => new Promise<{name: string, data: string}>((resolve, reject) => {
-                              const reader = new FileReader()
-                              reader.onload = () => resolve({ name: f.name, data: reader.result as string })
-                              reader.onerror = reject
-                              reader.readAsDataURL(f)
-                            }))
-                          )
-                          const names = fileEntries.map(fe => fe.name)
-                          const newData = Object.fromEntries(fileEntries.map(fe => [fe.name, fe.data]))
+                          // Store each file in its own localStorage key (avoids quota issues with embedded base64)
+                          await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
+                          const names = files.map(f => f.name)
                           setRequests(prev => {
                             const u: Request[] = prev.map(r => r.id === docsModal.id
-                              ? { ...r,
-                                  admin_files: [...(r.admin_files || []), ...names],
-                                  admin_file_data: { ...(r.admin_file_data || {}), ...newData }
-                                }
+                              ? { ...r, admin_files: [...new Set([...(r.admin_files || []), ...names])] }
                               : r)
                             saveRequests(u)
                             return u
                           })
                           setDocsModal(prev => prev ? {
                             ...prev,
-                            admin_files: [...(prev.admin_files || []), ...names],
-                            admin_file_data: { ...(prev.admin_file_data || {}), ...newData }
+                            admin_files: [...new Set([...(prev.admin_files || []), ...names])]
                           } : prev)
                           if (adminFileRef.current) adminFileRef.current.value = ''
                           toast.success(files.length + ' file(s) sent to user!')
