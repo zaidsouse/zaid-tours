@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -7,9 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, L
 import { LogOut, RefreshCw, Shield, Trash2, Eye, Pencil, Plus, Search, Download, RotateCcw, X, Mail, FileText, Check, AlertCircle, Paperclip } from 'lucide-react'
 import { requests as initRequests, services as initServices, companies as initCompanies, categories as initCategories, visaNationalities as initVisa, staff as initStaff } from '@/lib/mock-data'
 import { getVisaNationalities, saveVisaNationalities } from '@/lib/visa-store'
-import { getRequests, saveRequests } from '@/lib/request-store'
-import { getUsers } from '@/lib/user-store'
-import { getUserFile, storeAdminFile, downloadFile } from '@/lib/file-store'
+import { createClient } from '@/lib/supabase/client'
 import { Request, Service, PaymentStatus, ServiceStatus, VisaNationality, Staff, Category } from '@/lib/types'
 
 const payBadge: Record<PaymentStatus, string> = { paid: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700', failed: 'bg-red-100 text-red-700' }
@@ -21,7 +19,28 @@ type Tab = 'requests' | 'services' | 'visa' | 'companies' | 'staff' | 'categorie
 export default function AdminPage() {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('requests')
-  const [requests, setRequests] = useState<Request[]>(() => getRequests())
+  const [requests, setRequests] = useState<Request[]>([])
+  const [individuals, setIndividuals] = useState<{ name: string; email: string; phone: string; country: string; flag: string; services: number; total: number }[]>([])
+
+  useEffect(() => {
+    const loadData = async () => {
+      const supabase = createClient()
+      const { data: reqs } = await supabase.from('requests').select('*').order('created_at', { ascending: false })
+      setRequests((reqs as Request[]) || [])
+      const { data: profiles } = await supabase.from('profiles').select('full_name, email, phone, country, flag, dial_code').neq('role', 'admin')
+      const users = profiles || []
+      setIndividuals(users.map(u => ({
+        name: u.full_name || u.email,
+        email: u.email,
+        phone: (u.dial_code || '') + ' ' + (u.phone || ''),
+        country: u.country || '',
+        flag: u.flag || '',
+        services: (reqs || []).filter((r: Request) => r.user_email === u.email).length,
+        total: (reqs || []).filter((r: Request) => r.user_email === u.email).reduce((s: number, r: Request) => s + r.price, 0),
+      })))
+    }
+    loadData()
+  }, [])
   const [services, setServices] = useState<Service[]>(initServices)
   const [visaList, setVisaList] = useState<VisaNationality[]>(() => getVisaNationalities())
   const [staffList, setStaffList] = useState<Staff[]>(initStaff)
@@ -78,17 +97,21 @@ export default function AdminPage() {
   })
   const filteredCompanies = initCompanies.filter(c => c.name.toLowerCase().includes(companySearch.toLowerCase()) || c.email.toLowerCase().includes(companySearch.toLowerCase()))
 
-  const updateStatus = (id: string, status: ServiceStatus) => {
-    setRequests(prev => { const u: Request[] = prev.map(r => r.id === id ? { ...r, service_status: status } : r); saveRequests(u); return u })
+  const updateStatus = async (id: string, status: ServiceStatus) => {
+    const supabase = createClient()
+    await supabase.from('requests').update({ service_status: status }).eq('id', id)
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, service_status: status } : r))
     toast.success('Status updated')
   }
   const deleteRequest = (id: string) => {
-    setRequests(prev => { const u: Request[] = prev.filter(r => r.id !== id); saveRequests(u); return u })
+    const supabase = createClient(); await supabase.from('requests').delete().eq('id', id)
+    setRequests(prev => prev.filter(r => r.id !== id))
     setDeleteConfirm(null); toast.success('Request deleted')
   }
   const handleReturnRequest = () => {
     if (!returnModal || !returnModal.reason.trim()) { toast.error('Please enter a reason'); return }
-    setRequests(prev => { const u: Request[] = prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending' as const, return_reason: returnModal.reason } : r); saveRequests(u); return u })
+    const supabase = createClient(); await supabase.from('requests').update({ service_status: 'pending', return_reason: returnModal.reason }).eq('id', returnModal.id)
+    setRequests(prev => prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending' as const, return_reason: returnModal.reason } : r))
     setReturnModal(null); toast.success('Request returned to user')
   }
 
@@ -199,23 +222,6 @@ export default function AdminPage() {
     { name: 'Failed', value: requests.filter(r => r.payment_status === 'failed').length, color: '#DC2626' },
   ]
 
-  const storedUsers = getUsers()
-  const seedUsers = [
-    { name: 'zaid', email: 'zaid@outlook.com', phone: '123545', country: 'Jordan', flag: '🇯🇴' },
-    { name: 'Ali Khaled', email: 'alikhaled.iraqi@gmail.com', phone: '07712383920', country: 'Iraq', flag: '🇮🇶' },
-    { name: 'Zaid Sous', email: 'zaidsouse_123@hotmail.com', phone: '0796137019', country: 'Jordan', flag: '🇯🇴' },
-  ]
-  const storedEmails = new Set(storedUsers.map(u => u.email))
-  const mergedUsers = [
-    ...storedUsers.map(u => ({ name: u.name, email: u.email, phone: u.dial_code + ' ' + u.phone, country: u.country, flag: u.flag })),
-    ...seedUsers.filter(u => !storedEmails.has(u.email)),
-  ]
-  const individuals = mergedUsers.map(u => ({
-    ...u,
-    services: requests.filter(r => r.user_email === u.email).length,
-    total: requests.filter(r => r.user_email === u.email).reduce((s, r) => s + r.price, 0),
-  }))
-
   const serviceModal = showAddService || editService !== null
 
   return (
@@ -228,7 +234,7 @@ export default function AdminPage() {
               <Shield className="w-4 h-4" /> Admin Panel
             </button>
             <span className="text-sm text-gray-600">Zaid Sous</span>
-            <button onClick={() => { document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'; toast.success('Logged out'); setTimeout(() => router.push('/'), 500) }}
+            <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); toast.success('Logged out'); router.push('/') }}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition">
               <LogOut className="w-4 h-4" /> Logout
             </button>
@@ -358,14 +364,13 @@ export default function AdminPage() {
                           const files = Array.from(e.target.files || [])
                           if (!files.length || !docsModal) return
                           // Store each file in its own localStorage key (avoids quota issues with embedded base64)
-                          await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
+                          for (const file of files) { await supabase.storage.from('admin-files').upload(`${docsModal.id}/${file.name}`, file, { upsert: true }) }
                           const names = files.map(f => f.name)
                           setRequests(prev => {
                             const u: Request[] = prev.map(r => r.id === docsModal.id
                               ? { ...r, admin_files: Array.from(new Set([...(r.admin_files || []), ...names])) }
                               : r)
-                            saveRequests(u)
-                            return u
+                                                        return u
                           })
                           setDocsModal(prev => prev ? {
                             ...prev,
@@ -385,20 +390,21 @@ export default function AdminPage() {
                       {docsModal.uploaded_files && docsModal.uploaded_files.length > 0 ? (
                         <div className="space-y-2 mb-4">
                           {docsModal.uploaded_files.map((f, i) => {
-                            const data = getUserFile(docsModal.id, f)
-                            return (
+            return (
                               <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
                                 <div className="flex items-center gap-2">
                                   <Paperclip className="w-4 h-4 text-gray-500" />
                                   <span className="text-sm text-gray-700">{f}</span>
                                 </div>
-                                {data ? (
-                                  <button onClick={() => downloadFile(data, f)} className="p-1.5 hover:bg-blue-50 rounded-lg" title="Download">
-                                    <Download className="w-4 h-4 text-blue-500" />
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-gray-400 px-2">Demo file</span>
-                                )}
+                                <button onClick={async () => {
+                                  const supabase = createClient()
+                                  const userId = (await supabase.from('requests').select('user_id').eq('id', docsModal.id).single()).data?.user_id
+                                  if (!userId) return
+                                  const { data: signed } = await supabase.storage.from('user-files').createSignedUrl(`${userId}/${docsModal.id}/${f}`, 120)
+                                  if (signed?.signedUrl) window.open(signed.signedUrl)
+                                }} className="p-1.5 hover:bg-blue-50 rounded-lg" title="Download">
+                                  <Download className="w-4 h-4 text-blue-500" />
+                                </button>
                               </div>
                             )
                           })}

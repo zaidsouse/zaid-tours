@@ -1,14 +1,13 @@
 'use client'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download, RefreshCw } from 'lucide-react'
-import { mockUser, categories, services as allServices } from '@/lib/mock-data'
+import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download } from 'lucide-react'
+import { categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
-import { storeUserFile, getAdminFile, downloadFile } from '@/lib/file-store'
-import { getRequests, saveRequests } from '@/lib/request-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
+import { createClient } from '@/lib/supabase/client'
 
 
 
@@ -34,31 +33,41 @@ const categoryBadge: Record<string, string> = {
 const payBadge: Record<PaymentStatus, string> = { paid: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700', failed: 'bg-red-100 text-red-700' }
 const svcBadge: Record<ServiceStatus, string> = { completed: 'bg-green-100 text-green-700', processing: 'bg-blue-100 text-blue-700', pending: 'bg-yellow-100 text-yellow-700', cancelled: 'bg-gray-100 text-gray-600' }
 
-const initRequests: Request[] = [
-  { id: 'req-1', request_number: 'REQ-2026-0001', user_id: 'user-1', user_name: 'zaid', user_email: 'zaid@outlook.com', service_id: 'svc-2', service_name: 'Official Document Translation', category_name: 'Translation Services', country: 'N/A', price: 150, payment_status: 'paid', service_status: 'completed', uploaded_files: ['family_book.pdf', 'national_id.jpg'], created_at: '2026-04-01T10:00:00Z', updated_at: '2026-04-02T10:00:00Z' },
-  { id: 'req-2', request_number: 'REQ-2026-0002', user_id: 'user-1', user_name: 'zaid', user_email: 'zaid@outlook.com', service_id: 'svc-visa-tourist', service_name: 'Tourist Visa — UAE', category_name: 'Visa Services', country: 'UAE', price: 800, payment_status: 'pending', service_status: 'processing', uploaded_files: ['passport.pdf', 'bank_statement.pdf'], visa_nationality: 'Jordan', visa_destination: 'UAE', visa_type: 'Tourist', created_at: '2026-04-04T10:00:00Z', updated_at: '2026-04-04T10:00:00Z' },
-  { id: 'req-3', request_number: 'REQ-2026-0003', user_id: 'user-1', user_name: 'zaid', user_email: 'zaid@outlook.com', service_id: 'svc-8', service_name: 'Airport Transfer', category_name: 'Transportation Services', country: 'N/A', price: 40, payment_status: 'paid', service_status: 'pending', uploaded_files: [], return_reason: 'Please provide your flight number and exact arrival time', created_at: '2026-04-10T10:00:00Z', updated_at: '2026-04-10T10:00:00Z' },
-]
 
 export default function DashboardPage() {
   const router = useRouter()
   const [visaNationalities] = useState(() => getVisaNationalities())
-  const [user] = useState(mockUser)
-  const [userRequests, setUserRequests] = useState<Request[]>(() => {
-    const all = getRequests()
-    return all.filter(r => r.user_email === mockUser.email)
-  })
-  const refreshRequests = useCallback(() => {
-    const all = getRequests()
-    setUserRequests(all.filter(r => r.user_email === mockUser.email))
-  }, [])
+  const [supaUser, setSupaUser] = useState<{ id: string; email: string } | null>(null)
+  const [profile, setProfile] = useState<{ full_name: string; email: string; role: string } | null>(null)
+  const [userRequests, setUserRequests] = useState<Request[]>([])
+  const [loadingUser, setLoadingUser] = useState(true)
+
   useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'zaid_tours_requests') refreshRequests()
+    const init = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      setSupaUser({ id: user.id, email: user.email ?? '' })
+      const { data: prof } = await supabase.from('profiles').select('full_name, email, role').eq('id', user.id).single()
+      setProfile(prof)
+      const { data: reqs } = await supabase.from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+      setUserRequests((reqs as Request[]) || [])
+      setLoadingUser(false)
+
+      // Real-time subscription
+      const channel = supabase.channel('requests-' + user.id)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: 'user_id=eq.' + user.id },
+          async () => {
+            const { data: updated } = await supabase.from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+            setUserRequests((updated as Request[]) || [])
+          })
+        .subscribe()
+      return () => { supabase.removeChannel(channel) }
     }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [refreshRequests])
+    init()
+  }, [router])
+
+  const user = { id: supaUser?.id ?? '', full_name: profile?.full_name ?? supaUser?.email ?? '', email: supaUser?.email ?? '' }
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [visaStep, setVisaStep] = useState(1)
@@ -81,10 +90,11 @@ export default function DashboardPage() {
     setUploadedFiles([]); setPendingFileObjects([]); setReqNotes('')
   }
 
-  const handleLogout = () => {
-    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
     toast.success('Logged out')
-    setTimeout(() => router.push('/'), 500)
+    router.push('/')
   }
 
   const handleCatClick = (catId: string) => {
@@ -123,58 +133,51 @@ export default function DashboardPage() {
   }
 
   const handleSubmitService = async () => {
-    if (!selectedService) return
+    if (!selectedService || !supaUser) return
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 700))
+    const supabase = createClient()
     const cat = categories.find(c => c.id === selectedService.category_id)
-    const newReq: Request = {
-      id: 'req-' + Date.now(),
-      request_number: 'REQ-2026-' + String(userRequests.length + 1).padStart(4, '0'),
-      user_id: user.id, user_name: user.full_name, user_email: user.email,
+    const { data: newReq, error } = await supabase.from('requests').insert({
+      user_id: supaUser.id, user_name: user.full_name, user_email: user.email,
+      request_number: 'REQ-' + Date.now(),
       service_id: selectedService.id, service_name: selectedService.name_en,
       category_name: cat?.name_en || '', country: 'N/A',
       price: selectedService.price, payment_status: 'pending', service_status: 'pending',
       notes: reqNotes, uploaded_files: uploadedFiles,
-      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).select().single()
+    if (error || !newReq) { toast.error('Failed to submit'); setSubmitting(false); return }
+    for (const file of pendingFileObjects) {
+      await supabase.storage.from('user-files').upload(`${supaUser.id}/${newReq.id}/${file.name}`, file, { upsert: true })
     }
-    setUserRequests(prev => {
-      const updated: Request[] = [newReq, ...prev]
-      const allReqs = getRequests().filter(r => r.user_email !== user.email)
-      saveRequests([newReq, ...allReqs])
-      return updated
-    })
-    await Promise.all(pendingFileObjects.map(f => storeUserFile(newReq.id, f)))
+    setUserRequests(prev => [newReq as Request, ...prev])
     toast.success('Request submitted successfully!')
     resetForm(); setSubmitting(false)
   }
 
   const handleSubmitVisa = async () => {
     if (!visaNat || !visaDest || !visaType) { toast.error('Please complete all steps'); return }
+    if (!supaUser) return
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 700))
-    const newReq: Request = {
-      id: 'req-' + Date.now(),
-      request_number: 'REQ-2026-' + String(userRequests.length + 1).padStart(4, '0'),
-      user_id: user.id, user_name: user.full_name, user_email: user.email,
+    const supabase = createClient()
+    const { data: newReq, error } = await supabase.from('requests').insert({
+      user_id: supaUser.id, user_name: user.full_name, user_email: user.email,
+      request_number: 'REQ-' + Date.now(),
       service_id: 'svc-visa-' + visaType.toLowerCase(),
       service_name: visaType + ' Visa — ' + visaDest,
       category_name: 'Visa Services', country: visaDest,
-      price: (currentNatData?.visa_prices?.[visaType]) ?? 800, payment_status: 'pending', service_status: 'pending',
+      price: (currentNatData?.visa_prices?.[visaType]) ?? 800,
+      payment_status: 'pending', service_status: 'pending',
       notes: reqNotes, uploaded_files: uploadedFiles,
       visa_nationality: visaNat, visa_destination: visaDest, visa_type: visaType,
-      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).select().single()
+    if (error || !newReq) { toast.error('Failed to submit visa request'); setSubmitting(false); return }
+    for (const file of pendingFileObjects) {
+      await supabase.storage.from('user-files').upload(`${supaUser.id}/${newReq.id}/${file.name}`, file, { upsert: true })
     }
-    setUserRequests(prev => {
-      const updated: Request[] = [newReq, ...prev]
-      const allReqs = getRequests().filter(r => r.user_email !== user.email)
-      saveRequests([newReq, ...allReqs])
-      return updated
-    })
+    setUserRequests(prev => [newReq as Request, ...prev])
     toast.success('Visa request submitted successfully!')
-    await Promise.all(pendingFileObjects.map(f => storeUserFile(newReq.id, f)))
     resetForm(); setSubmitting(false)
   }
-
   const catServices = selectedCat && selectedCat !== 'cat-2' ? allServices.filter(s => s.category_id === selectedCat && s.is_visible) : []
   const currentNatData = visaNationalities.find(v => v.nationality === visaNat)
 
@@ -501,16 +504,16 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-green-700">Document Ready — Download from Admin</p>
                           <div className="flex flex-wrap gap-2 mt-1.5">
-                            {req.admin_files.map((f, i) => {
-                              const data = getAdminFile(req.id, f) ?? req.admin_file_data?.[f] ?? null
-                              return data ? (
-                                <button key={i} onClick={() => downloadFile(data, f)} className="flex items-center gap-1 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-lg hover:bg-green-100 transition">
-                                  <Paperclip className="w-3 h-3" /> {f}
-                                </button>
-                              ) : (
-                                <span key={i} className="text-xs text-green-600 flex items-center gap-1"><Paperclip className="w-3 h-3" />{f}</span>
-                              )
-                            })}
+                            {req.admin_files.map((f, i) => (
+                              <button key={i} onClick={async () => {
+                                const supabase = createClient()
+                                const { data: signed } = await supabase.storage.from('admin-files').createSignedUrl(`${req.id}/${f}`, 120)
+                                if (signed?.signedUrl) window.open(signed.signedUrl)
+                                else toast.error('File not available yet')
+                              }} className="flex items-center gap-1 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-lg hover:bg-green-100 transition">
+                                <Paperclip className="w-3 h-3" /> {f}
+                              </button>
+                            ))}
                           </div>
                         </div>
                       </div>
