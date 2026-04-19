@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { getUserByEmail } from '@/lib/user-store'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,7 +26,15 @@ export default function LoginPage() {
       toast.success('Login successful' + String.fromCharCode(33))
       setTimeout(() => router.push('/dashboard'), 500)
     } else {
-      toast.error('Invalid email or password')
+      // Check registered users in localStorage
+      const storedUser = getUserByEmail(email)
+      if (storedUser && storedUser.password === password) {
+        document.cookie = 'auth_token=user_mock; path=/; max-age=86400'
+        toast.success('Login successful' + String.fromCharCode(33))
+        setTimeout(() => router.push('/dashboard'), 500)
+      } else {
+        toast.error('Invalid email or password')
+      }
     }
     setLoading(false)
   }
@@ -71,7 +80,7 @@ export default function LoginPage() {
             </button>
           </form>
           <div className="mt-6 text-center text-sm text-gray-500">
-            Don&apos;t have an account?{' '}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-blue-600 font-medium hover:underline">Sign Up</Link>
           </div>
           <div className="mt-6 pt-6 border-t border-gray-100 space-y-2">

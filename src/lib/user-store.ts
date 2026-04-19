@@ -4,6 +4,7 @@ export interface StoredUser {
   id: string
   name: string
   email: string
+  password: string
   phone: string
   country: string
   dial_code: string

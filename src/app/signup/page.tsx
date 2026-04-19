@@ -90,6 +90,7 @@ export default function SignupPage() {
       id: 'user-' + Date.now(),
       name: form.name,
       email: form.email,
+      password: form.password,
       phone: form.phone,
       country: form.country,
       dial_code: form.dial,
