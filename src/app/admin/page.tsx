@@ -362,14 +362,14 @@ export default function AdminPage() {
                           const names = files.map(f => f.name)
                           setRequests(prev => {
                             const u: Request[] = prev.map(r => r.id === docsModal.id
-                              ? { ...r, admin_files: [...new Set([...(r.admin_files || []), ...names])] }
+                              ? { ...r, admin_files: Array.from(new Set([...(r.admin_files || []), ...names])) }
                               : r)
                             saveRequests(u)
                             return u
                           })
                           setDocsModal(prev => prev ? {
                             ...prev,
-                            admin_files: [...new Set([...(prev.admin_files || []), ...names])]
+                            admin_files: Array.from(new Set([...(prev.admin_files || []), ...names]))
                           } : prev)
                           if (adminFileRef.current) adminFileRef.current.value = ''
                           toast.success(files.length + ' file(s) sent to user!')
