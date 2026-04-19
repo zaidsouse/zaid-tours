@@ -8,6 +8,7 @@ import { LogOut, RefreshCw, Shield, Trash2, Eye, Pencil, Plus, Search, Download,
 import { requests as initRequests, services as initServices, companies as initCompanies, categories as initCategories, visaNationalities as initVisa, staff as initStaff } from '@/lib/mock-data'
 import { getVisaNationalities, saveVisaNationalities } from '@/lib/visa-store'
 import { getRequests, saveRequests } from '@/lib/request-store'
+import { getUsers } from '@/lib/user-store'
 import { getUserFile, storeAdminFile, downloadFile } from '@/lib/file-store'
 import { Request, Service, PaymentStatus, ServiceStatus, VisaNationality, Staff, Category } from '@/lib/types'
 
@@ -198,11 +199,22 @@ export default function AdminPage() {
     { name: 'Failed', value: requests.filter(r => r.payment_status === 'failed').length, color: '#DC2626' },
   ]
 
-  const individuals = [
-    { name: 'zaid', email: 'zaid@outlook.com', phone: '123545', country: 'Jordan', flag: '🇯🇴', services: requests.filter(r => r.user_email === 'zaid@outlook.com').length, total: requests.filter(r => r.user_email === 'zaid@outlook.com').reduce((s, r) => s + r.price, 0) },
-    { name: 'Ali Khaled', email: 'alikhaled.iraqi@gmail.com', phone: '07712383920', country: 'Iraq', flag: '🇮🇶', services: 0, total: 0 },
-    { name: 'Zaid Sous', email: 'zaidsouse_123@hotmail.com', phone: '0796137019', country: 'Jordan', flag: '🇯🇴', services: 0, total: 0 },
+  const storedUsers = getUsers()
+  const seedUsers = [
+    { name: 'zaid', email: 'zaid@outlook.com', phone: '123545', country: 'Jordan', flag: '🇯🇴' },
+    { name: 'Ali Khaled', email: 'alikhaled.iraqi@gmail.com', phone: '07712383920', country: 'Iraq', flag: '🇮🇶' },
+    { name: 'Zaid Sous', email: 'zaidsouse_123@hotmail.com', phone: '0796137019', country: 'Jordan', flag: '🇯🇴' },
   ]
+  const storedEmails = new Set(storedUsers.map(u => u.email))
+  const mergedUsers = [
+    ...storedUsers.map(u => ({ name: u.name, email: u.email, phone: u.dial_code + ' ' + u.phone, country: u.country, flag: u.flag })),
+    ...seedUsers.filter(u => !storedEmails.has(u.email)),
+  ]
+  const individuals = mergedUsers.map(u => ({
+    ...u,
+    services: requests.filter(r => r.user_email === u.email).length,
+    total: requests.filter(r => r.user_email === u.email).reduce((s, r) => s + r.price, 0),
+  }))
 
   const serviceModal = showAddService || editService !== null
 
