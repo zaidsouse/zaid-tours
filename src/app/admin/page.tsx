@@ -78,16 +78,16 @@ export default function AdminPage() {
   const filteredCompanies = initCompanies.filter(c => c.name.toLowerCase().includes(companySearch.toLowerCase()) || c.email.toLowerCase().includes(companySearch.toLowerCase()))
 
   const updateStatus = (id: string, status: ServiceStatus) => {
-    setRequests(prev => { const u = prev.map(r => r.id === id ? { ...r, service_status: status } : r); saveRequests(u); return u })
+    setRequests(prev => { const u: Request[] = prev.map(r => r.id === id ? { ...r, service_status: status } : r); saveRequests(u); return u })
     toast.success('Status updated')
   }
   const deleteRequest = (id: string) => {
-    setRequests(prev => { const u = prev.filter(r => r.id !== id); saveRequests(u); return u })
+    setRequests(prev => { const u: Request[] = prev.filter(r => r.id \!== id); saveRequests(u); return u })
     setDeleteConfirm(null); toast.success('Request deleted')
   }
   const handleReturnRequest = () => {
     if (!returnModal || !returnModal.reason.trim()) { toast.error('Please enter a reason'); return }
-    setRequests(prev => { const u = prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending', return_reason: returnModal.reason } : r); saveRequests(u); return u })
+    setRequests(prev => { const u: Request[] = prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending' as const, return_reason: returnModal.reason } : r); saveRequests(u); return u })
     setReturnModal(null); toast.success('Request returned to user')
   }
 
@@ -348,7 +348,7 @@ export default function AdminPage() {
                           await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
                           const names = files.map(f => f.name)
                           setRequests(prev => {
-                            const u = prev.map(r => r.id === docsModal.id
+                            const u: Request[] = prev.map(r => r.id === docsModal.id
                               ? { ...r, admin_files: [...(r.admin_files || []), ...names] }
                               : r)
                             saveRequests(u)

@@ -127,7 +127,7 @@ export default function DashboardPage() {
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }
     setUserRequests(prev => {
-      const updated = [newReq, ...prev]
+      const updated: Request[] = [newReq, ...prev]
       const allReqs = getRequests().filter(r => r.user_email !== user.email)
       saveRequests([newReq, ...allReqs])
       return updated
@@ -154,7 +154,7 @@ export default function DashboardPage() {
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }
     setUserRequests(prev => {
-      const updated = [newReq, ...prev]
+      const updated: Request[] = [newReq, ...prev]
       const allReqs = getRequests().filter(r => r.user_email !== user.email)
       saveRequests([newReq, ...allReqs])
       return updated
