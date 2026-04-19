@@ -44,7 +44,7 @@ export default function AdminPage() {
   // Visa Management
   const [showAddVisa, setShowAddVisa] = useState(false)
   const [editVisa, setEditVisa] = useState<VisaNationality | null>(null)
-  const [visaForm, setVisaForm] = useState({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', reqInput: {} as Record<string, string>, destinations: [] as string[], visa_types: [] as string[], visa_prices: {} as Record<string, number>, visa_reqs: {} as Record<string, string[]> })
+  const [visaForm, setVisaForm] = useState({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', reqDest: '', reqInput: {} as Record<string, string>, destinations: [] as string[], visa_types: [] as string[], visa_prices: {} as Record<string, number>, visa_reqs: {} as Record<string, string[]> })
 
   // Staff Management
   const [showAddStaff, setShowAddStaff] = useState(false)
