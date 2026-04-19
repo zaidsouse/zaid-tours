@@ -1,9 +1,9 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download } from 'lucide-react'
+import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download, RefreshCw } from 'lucide-react'
 import { mockUser, categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
 import { storeUserFile, downloadFile } from '@/lib/file-store'
@@ -48,6 +48,17 @@ export default function DashboardPage() {
     const all = getRequests()
     return all.filter(r => r.user_email === mockUser.email)
   })
+  const refreshRequests = useCallback(() => {
+    const all = getRequests()
+    setUserRequests(all.filter(r => r.user_email === mockUser.email))
+  }, [])
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'zaid_tours_requests') refreshRequests()
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [refreshRequests])
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [visaStep, setVisaStep] = useState(1)
@@ -460,7 +471,12 @@ export default function DashboardPage() {
 
         {/* Service History */}
         <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Service History</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Service History</h2>
+            <button onClick={refreshRequests} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 border border-gray-200 hover:border-blue-300 px-3 py-1.5 rounded-lg transition">
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            </button>
+          </div>
           {userRequests.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-8">No requests yet.</p>
           ) : (
