@@ -103,12 +103,12 @@ export default function AdminPage() {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, service_status: status } : r))
     toast.success('Status updated')
   }
-  const deleteRequest = (id: string) => {
+  const deleteRequest = async (id: string) => {
     const supabase = createClient(); await supabase.from('requests').delete().eq('id', id)
     setRequests(prev => prev.filter(r => r.id !== id))
     setDeleteConfirm(null); toast.success('Request deleted')
   }
-  const handleReturnRequest = () => {
+  const handleReturnRequest = async () => {
     if (!returnModal || !returnModal.reason.trim()) { toast.error('Please enter a reason'); return }
     const supabase = createClient(); await supabase.from('requests').update({ service_status: 'pending', return_reason: returnModal.reason }).eq('id', returnModal.id)
     setRequests(prev => prev.map(r => r.id === returnModal.id ? { ...r, service_status: 'pending' as const, return_reason: returnModal.reason } : r))
