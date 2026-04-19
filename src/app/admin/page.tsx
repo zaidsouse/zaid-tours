@@ -343,7 +343,7 @@ export default function AdminPage() {
                       <input ref={adminFileRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden"
                         onChange={async e => {
                           const files = Array.from(e.target.files || [])
-                          if (\!files.length || \!docsModal) return
+                          if (!files.length || !docsModal) return
                           await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
                           const names = files.map(f => f.name)
                           setRequests(prev => prev.map(r => r.id === docsModal.id
@@ -351,7 +351,7 @@ export default function AdminPage() {
                             : r))
                           setDocsModal(prev => prev ? { ...prev, admin_files: [...(prev.admin_files || []), ...names] } : prev)
                           if (adminFileRef.current) adminFileRef.current.value = ''
-                          toast.success(files.length + ' file(s) sent to user\!')
+                          toast.success(files.length + ' file(s) sent to user!')
                         }}
                       />
                       <div className="flex items-center justify-between mb-4">
@@ -654,7 +654,7 @@ export default function AdminPage() {
                                     {(visaForm.visa_reqs[vt] || []).map((req, i) => (
                                       <div key={i} className="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-gray-100">
                                         <span className="text-xs text-gray-700">• {req}</span>
-                                        <button onClick={() => setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: (p.visa_reqs[vt] || []).filter((_, j) => j \!== i) } }))} className="text-red-400 hover:text-red-600 ml-2"><X className="w-3 h-3" /></button>
+                                        <button onClick={() => setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: (p.visa_reqs[vt] || []).filter((_, j) => j !== i) } }))} className="text-red-400 hover:text-red-600 ml-2"><X className="w-3 h-3" /></button>
                                       </div>
                                     ))}
                                     {(visaForm.visa_reqs[vt] || []).length === 0 && <p className="text-xs text-gray-400 italic">No requirements added yet</p>}
