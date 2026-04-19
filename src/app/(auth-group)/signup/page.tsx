@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { UserPlus, Search, ChevronDown } from 'lucide-react'
 import { addUser } from '@/lib/user-store'
-import { signIn } from 'next-auth/react'
 
 const COUNTRIES = [
   { name: 'Jordan', flag: '🇯🇴', dial: '+962' },
