@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { FileText, Globe, Package, Car, Activity, Calendar, DollarSign, LogOut, LayoutDashboard, X, ChevronRight, Plus, Upload, Paperclip, AlertCircle, RotateCcw, Download } from 'lucide-react'
 import { mockUser, categories, services as allServices } from '@/lib/mock-data'
 import { getVisaNationalities } from '@/lib/visa-store'
-import { storeUserFile, getAdminFile, downloadFile } from '@/lib/file-store'
+import { storeUserFile, downloadFile } from '@/lib/file-store'
 import { getRequests, saveRequests } from '@/lib/request-store'
 import { PaymentStatus, ServiceStatus, Service, Request } from '@/lib/types'
 
@@ -408,11 +408,11 @@ export default function DashboardPage() {
                         <p className="text-sm text-blue-600 font-medium">{(currentNatData?.visa_prices?.[visaType]) ?? 800} USD</p>
                       </div>
                     </div>
-                    {(currentNatData?.visa_reqs?.[visaType] || []).length > 0 && (
+                    {(currentNatData?.visa_reqs?.[`${visaDest}_${visaType}`] || []).length > 0 && (
                       <div className="mb-4">
                         <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Required Documents</p>
                         <div className="flex flex-wrap gap-2">
-                          {(currentNatData?.visa_reqs?.[visaType] || []).map((r, i) => (
+                          {(currentNatData?.visa_reqs?.[`${visaDest}_${visaType}`] || []).map((r, i) => (
                             <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{r}</span>
                           ))}
                         </div>
@@ -486,7 +486,7 @@ export default function DashboardPage() {
                           <p className="text-xs font-semibold text-green-700">Document Ready — Download from Admin</p>
                           <div className="flex flex-wrap gap-2 mt-1.5">
                             {req.admin_files.map((f, i) => {
-                              const data = getAdminFile(req.id, f)
+                              const data = req.admin_file_data?.[f] ?? null
                               return data ? (
                                 <button key={i} onClick={() => downloadFile(data, f)} className="flex items-center gap-1 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-lg hover:bg-green-100 transition">
                                   <Paperclip className="w-3 h-3" /> {f}

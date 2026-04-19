@@ -119,10 +119,10 @@ export default function AdminPage() {
   const openVisaModal = (vn?: VisaNationality) => {
     if (vn) {
       setEditVisa(vn)
-      setVisaForm({ nationality: vn.nationality, flag_emoji: vn.flag_emoji, destInput: '', typeInput: '', reqInput: {}, destinations: [...vn.destinations], visa_types: [...vn.visa_types], visa_prices: { ...(vn.visa_prices || {}) }, visa_reqs: JSON.parse(JSON.stringify(vn.visa_reqs || {})) })
+      setVisaForm({ nationality: vn.nationality, flag_emoji: vn.flag_emoji, destInput: '', typeInput: '', reqDest: vn.destinations[0] || '', reqInput: {}, destinations: [...vn.destinations], visa_types: [...vn.visa_types], visa_prices: { ...(vn.visa_prices || {}) }, visa_reqs: JSON.parse(JSON.stringify(vn.visa_reqs || {})) })
     } else {
       setEditVisa(null)
-      setVisaForm({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', reqInput: {}, destinations: [], visa_types: [], visa_prices: {}, visa_reqs: {} })
+      setVisaForm({ nationality: '', flag_emoji: '', destInput: '', typeInput: '', reqDest: '', reqInput: {} as Record<string, string>, destinations: [], visa_types: [], visa_prices: {}, visa_reqs: {} })
     }
     setShowAddVisa(true)
   }
@@ -345,16 +345,32 @@ export default function AdminPage() {
                         onChange={async e => {
                           const files = Array.from(e.target.files || [])
                           if (!files.length || !docsModal) return
-                          await Promise.all(files.map(f => storeAdminFile(docsModal.id, f)))
-                          const names = files.map(f => f.name)
+                          // Read base64 and embed directly in request object so user can download cross-session
+                          const fileEntries: Array<{name: string, data: string}> = await Promise.all(
+                            files.map(f => new Promise<{name: string, data: string}>((resolve, reject) => {
+                              const reader = new FileReader()
+                              reader.onload = () => resolve({ name: f.name, data: reader.result as string })
+                              reader.onerror = reject
+                              reader.readAsDataURL(f)
+                            }))
+                          )
+                          const names = fileEntries.map(fe => fe.name)
+                          const newData = Object.fromEntries(fileEntries.map(fe => [fe.name, fe.data]))
                           setRequests(prev => {
                             const u: Request[] = prev.map(r => r.id === docsModal.id
-                              ? { ...r, admin_files: [...(r.admin_files || []), ...names] }
+                              ? { ...r,
+                                  admin_files: [...(r.admin_files || []), ...names],
+                                  admin_file_data: { ...(r.admin_file_data || {}), ...newData }
+                                }
                               : r)
                             saveRequests(u)
                             return u
                           })
-                          setDocsModal(prev => prev ? { ...prev, admin_files: [...(prev.admin_files || []), ...names] } : prev)
+                          setDocsModal(prev => prev ? {
+                            ...prev,
+                            admin_files: [...(prev.admin_files || []), ...names],
+                            admin_file_data: { ...(prev.admin_file_data || {}), ...newData }
+                          } : prev)
                           if (adminFileRef.current) adminFileRef.current.value = ''
                           toast.success(files.length + ' file(s) sent to user!')
                         }}
@@ -638,35 +654,49 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )}
-                        {visaForm.visa_types.length > 0 && (
+                        {visaForm.visa_types.length > 0 && visaForm.destinations.length > 0 && (
                           <div>
-                            <label className="text-xs font-medium text-gray-600 mb-2 block">Requirements per Visa Type</label>
-                            <div className="space-y-3">
-                              {visaForm.visa_types.map(vt => (
-                                <div key={vt} className="border border-gray-100 rounded-xl p-3 bg-gray-50">
-                                  <p className="text-xs font-semibold text-gray-700 mb-2">{vt} Visa</p>
-                                  <div className="flex gap-2 mb-2">
-                                    <input
-                                      value={visaForm.reqInput[vt] || ''}
-                                      onChange={e => setVisaForm(p => ({ ...p, reqInput: { ...p.reqInput, [vt]: e.target.value } }))}
-                                      onKeyDown={e => { if (e.key === 'Enter' && (visaForm.reqInput[vt] || '').trim()) { const val = visaForm.reqInput[vt].trim(); setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: [...(p.visa_reqs[vt] || []), val] }, reqInput: { ...p.reqInput, [vt]: '' } })) } }}
-                                      placeholder="Add requirement + Enter"
-                                      className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                    />
-                                    <button onClick={() => { const val = (visaForm.reqInput[vt] || '').trim(); if (val) setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: [...(p.visa_reqs[vt] || []), val] }, reqInput: { ...p.reqInput, [vt]: '' } })) }} className="px-2 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"><Plus className="w-3 h-3" /></button>
-                                  </div>
-                                  <div className="flex flex-col gap-1">
-                                    {(visaForm.visa_reqs[vt] || []).map((req, i) => (
-                                      <div key={i} className="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-gray-100">
-                                        <span className="text-xs text-gray-700">• {req}</span>
-                                        <button onClick={() => setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [vt]: (p.visa_reqs[vt] || []).filter((_, j) => j !== i) } }))} className="text-red-400 hover:text-red-600 ml-2"><X className="w-3 h-3" /></button>
-                                      </div>
-                                    ))}
-                                    {(visaForm.visa_reqs[vt] || []).length === 0 && <p className="text-xs text-gray-400 italic">No requirements added yet</p>}
-                                  </div>
-                                </div>
-                              ))}
+                            <label className="text-xs font-medium text-gray-600 mb-2 block">Requirements per Destination & Visa Type</label>
+                            <div className="flex gap-2 mb-3">
+                              <select
+                                value={visaForm.reqDest}
+                                onChange={e => setVisaForm(p => ({ ...p, reqDest: e.target.value }))}
+                                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              >
+                                {visaForm.destinations.map(d => <option key={d} value={d}>{d}</option>)}
+                              </select>
                             </div>
+                            {visaForm.reqDest && (
+                              <div className="space-y-3">
+                                {visaForm.visa_types.map(vt => {
+                                  const comboKey = `${visaForm.reqDest}_${vt}`
+                                  return (
+                                    <div key={vt} className="border border-gray-100 rounded-xl p-3 bg-gray-50">
+                                      <p className="text-xs font-semibold text-gray-700 mb-2">{visaForm.reqDest} — {vt} Visa</p>
+                                      <div className="flex gap-2 mb-2">
+                                        <input
+                                          value={visaForm.reqInput[comboKey] || ''}
+                                          onChange={e => setVisaForm(p => ({ ...p, reqInput: { ...p.reqInput, [comboKey]: e.target.value } }))}
+                                          onKeyDown={e => { if (e.key === 'Enter') { const val = (visaForm.reqInput[comboKey] || '').trim(); if (val) setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [comboKey]: [...(p.visa_reqs[comboKey] || []), val] }, reqInput: { ...p.reqInput, [comboKey]: '' } })) } }}
+                                          placeholder="Add requirement + Enter"
+                                          className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        />
+                                        <button onClick={() => { const val = (visaForm.reqInput[comboKey] || '').trim(); if (val) setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [comboKey]: [...(p.visa_reqs[comboKey] || []), val] }, reqInput: { ...p.reqInput, [comboKey]: '' } })) }} className="px-2 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"><Plus className="w-3 h-3" /></button>
+                                      </div>
+                                      <div className="flex flex-col gap-1">
+                                        {(visaForm.visa_reqs[comboKey] || []).map((req, i) => (
+                                          <div key={i} className="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-gray-100">
+                                            <span className="text-xs text-gray-700">• {req}</span>
+                                            <button onClick={() => setVisaForm(p => ({ ...p, visa_reqs: { ...p.visa_reqs, [comboKey]: (p.visa_reqs[comboKey] || []).filter((_, j) => j !== i) } }))} className="text-red-400 hover:text-red-600 ml-2"><X className="w-3 h-3" /></button>
+                                          </div>
+                                        ))}
+                                        {(visaForm.visa_reqs[comboKey] || []).length === 0 && <p className="text-xs text-gray-400 italic">No requirements added yet</p>}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
                         <div>
